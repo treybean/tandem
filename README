@@ -1,1 +1,113 @@
-Tandem 2.0 - Get off those engines, these are bikes damnit.
+Tandem
+======
+
+This will be a version 2 of the Tandem CMS Engine in plugin-form. 
+
+
+Example
+=======
+
+Example goes here.
+
+
+Copyright (c) 2008 [name of plugin creator], released under the MIT license
+
+
+COPIED FROM TREY
+================
+JOSHUA TREE                                                                     
+                                                                     
+                                          
+$ mkdir -p sinnottlawfirm/vendor
+$ cd sinnottlawfirm/
+$ svn export http://dev.rubyonrails.org/svn/rails/tags/rel_1-2-5 vendor/rails
+$ ruby vendor/rails/railties/bin/rails .
+$ rm -R vendor/rails/
+$ rm log/*.log
+$ rm public/index.html
+$ cd ..
+$ svn import sinnottlawfirm/ http://12spokes.com/svn/projects/sinnottlawfirm/trunk/ -m 'importing initial sinnottlawfirm project'
+$ rm -rf sinnottlawfirm/
+$ svn co http://12spokes.com/svn/projects/sinnottlawfirm/trunk sinnottlawfirm
+$ cd sinnottlawfirm/
+$ svn propedit svn:externals vendor/ (rails -r 7981 http://dev.rubyonrails.org/svn/rails/tags/rel_1-2-5)
+$ svn up
+$ svn ci -m 'externalled rails for sinnottlawfirm'
+$ svn propedit svn:externals vendor/plugins/ (
+engines	http://svn.rails-engines.org/engines/branches/rb_1.2
+tandem http://12spokes.com/svn/projects/tandem
+attachment_fu -r2838 http://svn.techno-weenie.net/projects/plugins/attachment_fu
+responds_to_parent http://sean.treadway.info/svn/plugins/responds_to_parent
+exception_notification http://dev.rubyonrails.com/svn/rails/plugins/exception_notification
+)
+$ svn up
+$ svn ci -m 'externalled tandem and necessary plugins'
+
+
+SET UP ROUTES - add the following to routes.rb
+#Tandem Routes
+map.from_plugin :tandem
+
+
+SET UP DATABASES AND DATABASE.YML
+
+
+TANDEM MIGRATIONS
+$ script/generate plugin_migration
+$ rake db:migrate
+CHECKIN SVN
+
+CREATE INITIAL USER
+comment out "ActionController::Base.send(:before_filter, :login_required)" in tandem's init.rb
+$ script/server
+go to /users/new and fill out form
+/logout
+exit server ^c
+uncomment login_required line
+
+
+CREATE MIGRATION TO CREATE PAGES AT LEAST HOME PAGE
+$ script/generate migration CreateInitialPages
+(
+	class CreateInitialPages < ActiveRecord::Migration
+	  def self.up
+	    Page.create(:title => 'Home',
+	                :template => nil,
+	                :parent_page_id => nil,
+	                :position => 1,
+	                :global_nav => 1)
+
+	    Page.create(:title => 'About',
+	                :template => nil,
+	                :parent_page_id => 1,
+	                :position => 2,
+	                :global_nav => 1)
+
+	    Page.create(:title => 'Contact',
+	                :template => 'pages/contact',
+	                :parent_page_id => 1,
+	                :position => 3,
+	                :global_nav => 1)
+	  end
+
+	  def self.down
+	    Page.find_by_title('About').destroy
+	    Page.find_by_title('Contact').destroy
+	  end
+	end
+)
+$ rake db:migrate
+
+
+ADD LOGO FOR TANDEM
+place in images/logo_tandem-trans.png  (png 8, 100px high for proper placement)
+
+
+ADD REDCLOTH PATCH TO APPLICATION HELPER (OUTSIDE OF APPLICATION HELPER MODULE)
+class RedCloth
+  # Patch for RedCloth.  Fixed in RedCloth r128 but _why hasn't released it yet.
+  # <a href="http://code.whytheluckystiff.net/redcloth/changeset/128">http://code.whytheluckystiff.net/redcloth/changeset/128</a>
+  def hard_break( text ) 
+    text.gsub!( /(.)\n(?!\n|\Z| *([#*=]+(\s|$)|[{|]))/, "\\1<br />" ) if hard_breaks 
+  end 
+end
